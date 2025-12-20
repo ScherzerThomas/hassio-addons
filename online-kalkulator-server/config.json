@@ -1,8 +1,8 @@
 {
   "name": "WordPress Full Stack",
   "version": "1.0.1",
-  "slug": "wordpress_fullstack",
-  "description": "Nginx + PHP + WordPress + MariaDB + Let's Encrypt (data-aware)",
+  "slug": "online-kalkulator-server",
+  "description": "Nginx + PHP + WordPress + MariaDB + phpMyAdmin + Let's Encrypt",
   "startup": "services",
   "boot": "auto",
   "ports": {

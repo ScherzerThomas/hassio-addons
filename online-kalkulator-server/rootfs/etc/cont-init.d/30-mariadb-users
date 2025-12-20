@@ -11,17 +11,14 @@ DB_USER=$(bashio::config 'db_user')
 DB_USER_PASSWORD=$(bashio::config 'db_user_password')
 
 if [ -z "$DB_ROOT_PASSWORD" ] || [ -z "$DB_USER_PASSWORD" ]; then
-    echo "[30-mariadb-users] ERROR: Please set db_root_password and db_user_password in add-on options."
+    echo "[30-mariadb-users] ERROR: Please set db_root_password and db_user_password."
     exit 1
 fi
 
 echo "[30-mariadb-users] Waiting for MariaDB to be ready..."
 
-# Wait for MariaDB
 for i in $(seq 1 30); do
-    if mysqladmin ping --silent; then
-        break
-    fi
+    if mysqladmin ping --silent; then break; fi
     sleep 1
 done
 

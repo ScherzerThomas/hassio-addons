@@ -3,7 +3,7 @@
 mkdir -p /data/phpmyadmin
 
 if [ ! -f /data/phpmyadmin/index.php ]; then
-    echo "Installing phpMyAdmin..."
+    echo "[20-phpmyadmin] Installing phpMyAdmin..."
     curl -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz -o /tmp/pma.tar.gz
     tar -xzf /tmp/pma.tar.gz -C /data/phpmyadmin --strip-components=1
     rm /tmp/pma.tar.gz

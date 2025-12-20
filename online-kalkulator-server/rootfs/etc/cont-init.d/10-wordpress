@@ -5,7 +5,7 @@ mkdir -p /data/wordpress
 
 # Install WordPress if missing
 if [ ! -f /data/wordpress/wp-config.php ]; then
-    echo "Installing WordPress..."
+    echo "[10-wordpress] Installing WordPress..."
     curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz
     tar -xzf /tmp/wp.tar.gz -C /data/wordpress --strip-components=1
     rm /tmp/wp.tar.gz

@@ -6,7 +6,7 @@ EMAIL=$(bashio::config 'email')
 mkdir -p /data/certs
 
 # First-time certificate
-if [ ! -f "/data/certs/live/$DOMAIN/fullchain.pem" ]; then
+if [ ! -f "/data/certs/live/${DOMAIN}/fullchain.pem" ]; then
     certbot certonly --standalone \
         -d "$DOMAIN" \
         --email "$EMAIL" \

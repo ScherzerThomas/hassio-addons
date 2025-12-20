@@ -22,14 +22,11 @@ RUN apk add --no-cache \
     php81-xmlwriter \
     php81-xmlreader \
     php81-fileinfo \
-    php81-zip \
     mariadb mariadb-client \
     certbot \
     curl \
     tar
 
-
-# Copy rootfs (configs + s6 services)
 COPY rootfs/ /
 
 CMD ["/init"]
