@@ -61,3 +61,4 @@ fi
 chown nginx:nginx "$CONFIG_FILE"
 
 echo "[40-wpconfig] wp-config.php created successfully."
+

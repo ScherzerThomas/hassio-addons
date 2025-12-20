@@ -10,3 +10,4 @@ if [ ! -f /data/phpmyadmin/index.php ]; then
 fi
 
 chown -R nginx:nginx /data/phpmyadmin
+

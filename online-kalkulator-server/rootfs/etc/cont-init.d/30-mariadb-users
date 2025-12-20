@@ -50,3 +50,4 @@ FLUSH PRIVILEGES;
 EOF
 
 echo "[30-mariadb-users] Database and user configured successfully."
+

@@ -8,3 +8,4 @@ if [ ! -d /data/mysql/mysql ]; then
 fi
 
 exec mysqld --datadir=/data/mysql --user=mysql
+

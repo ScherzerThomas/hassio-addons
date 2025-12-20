@@ -13,3 +13,4 @@ fi
 
 # Ensure correct permissions
 chown -R nginx:nginx /data/wordpress
+
