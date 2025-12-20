@@ -1,0 +1,52 @@
+#!/usr/bin/with-contenv bash
+source /usr/lib/bashio/bashio.sh
+set -e
+
+DB_NAME="wordpress"
+DB_ROOT_PASSWORD=$(bashio::config 'db_root_password')
+DB_USER=$(bashio::config 'db_user')
+DB_USER_PASSWORD=$(bashio::config 'db_user_password')
+
+if [ -z "$DB_ROOT_PASSWORD" ] || [ -z "$DB_USER_PASSWORD" ]; then
+    bashio::log.error "db_root_password and db_user_password must be set"
+    exit 1
+fi
+
+bashio::log.info "Waiting for MariaDB to be ready..."
+
+for i in $(seq 1 30); do
+    if mysqladmin ping --silent; then break; fi
+    sleep 1
+done
+
+if ! mysqladmin ping --silent; then
+    bashio::log.error "MariaDB did not become ready"
+    exit 1
+fi
+
+bashio::log.info "MariaDB is up. Configuring root user..."
+
+# Set root password (safe if already set)
+mysql -u root <<EOF || true
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASSWORD}';
+FLUSH PRIVILEGES;
+EOF
+
+MYSQL_ROOT="mysql -u root -p${DB_ROOT_PASSWORD}"
+
+bashio::log.info "Creating database '${DB_NAME}'..."
+$MYSQL_ROOT <<EOF
+CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+EOF
+
+bashio::log.info "Creating user '${DB_USER}'..."
+$MYSQL_ROOT <<EOF
+CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${DB_USER_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
+FLUSH PRIVILEGES;
+EOF
+
+bashio::log.info "MariaDB users and database configured successfully."
+
+exit 0
+
