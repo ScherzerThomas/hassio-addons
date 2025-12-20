@@ -20,7 +20,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY run.sh /app/run.sh
+COPY . /app/
 
 # Ensure run script is executable
 RUN chmod a+x /app/run.sh

@@ -1,6 +1,6 @@
 name: "Online-Kalkulator Addon"
 description: "REST-API backend for online-kalkulator"
-version: "1.0.1"
+version: "1.0.0"
 slug: "online-kalkulator-addon"
 init: false
 ports:
