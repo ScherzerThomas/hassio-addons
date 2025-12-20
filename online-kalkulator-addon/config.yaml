@@ -5,6 +5,7 @@ slug: "online-kalkulator-addon"
 init: false
 ports:
   8000/tcp: 8000
+webui: "http://[HOST]:[PORT:8000]"
 arch:
   - aarch64
   - amd64
