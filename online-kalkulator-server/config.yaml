@@ -1,10 +1,17 @@
 name: "Online-Kalkulator-Server"
+description: "Nginx + PHP + WordPress + MariaDB + phpMyAdmin + Let's Encrypt"
 version: "1.0.1"
 slug: "online-kalkulator-server"
-description: "Nginx + PHP + WordPress + MariaDB + phpMyAdmin + Let's Encrypt"
+init: false
 startup: "services"
 boot: "auto"
-
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+  
 ports:
   "8080/tcp": 80
   "8443/tcp": 8444
