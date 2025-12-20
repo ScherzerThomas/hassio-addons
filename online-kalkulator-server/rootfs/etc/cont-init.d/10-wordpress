@@ -1,0 +1,15 @@
+#!/usr/bin/with-contenv sh
+
+# Create WordPress directory
+mkdir -p /data/wordpress
+
+# Install WordPress if missing
+if [ ! -f /data/wordpress/wp-config.php ]; then
+    echo "Installing WordPress..."
+    curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz
+    tar -xzf /tmp/wp.tar.gz -C /data/wordpress --strip-components=1
+    rm /tmp/wp.tar.gz
+fi
+
+# Ensure correct permissions
+chown -R nginx:nginx /data/wordpress

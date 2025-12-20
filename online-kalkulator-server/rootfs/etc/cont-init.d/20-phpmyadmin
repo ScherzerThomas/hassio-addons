@@ -1,0 +1,12 @@
+#!/usr/bin/with-contenv sh
+
+mkdir -p /data/phpmyadmin
+
+if [ ! -f /data/phpmyadmin/index.php ]; then
+    echo "Installing phpMyAdmin..."
+    curl -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz -o /tmp/pma.tar.gz
+    tar -xzf /tmp/pma.tar.gz -C /data/phpmyadmin --strip-components=1
+    rm /tmp/pma.tar.gz
+fi
+
+chown -R nginx:nginx /data/phpmyadmin

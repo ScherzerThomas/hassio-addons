@@ -1,0 +1,63 @@
+#!/usr/bin/with-contenv sh
+
+# 40-wpconfig
+# Generates wp-config.php using HA add-on config values.
+
+set -e
+
+WP_DIR="/data/wordpress"
+CONFIG_FILE="${WP_DIR}/wp-config.php"
+SAMPLE_FILE="${WP_DIR}/wp-config-sample.php"
+
+DB_NAME="wordpress"
+DB_USER=$(bashio::config 'db_user')
+DB_USER_PASSWORD=$(bashio::config 'db_user_password')
+DB_HOST="127.0.0.1"
+DOMAIN=$(bashio::config 'domain')
+
+if [ -f "$CONFIG_FILE" ]; then
+    echo "[40-wpconfig] wp-config.php already exists. Skipping."
+    exit 0
+fi
+
+if [ ! -f "$SAMPLE_FILE" ]; then
+    echo "[40-wpconfig] ERROR: wp-config-sample.php missing. WordPress not installed?"
+    exit 1
+fi
+
+echo "[40-wpconfig] Creating wp-config.php..."
+
+cp "$SAMPLE_FILE" "$CONFIG_FILE"
+
+# Replace DB settings
+sed -i "s/database_name_here/${DB_NAME}/" "$CONFIG_FILE"
+sed -i "s/username_here/${DB_USER}/" "$CONFIG_FILE"
+sed -i "s/password_here/${DB_USER_PASSWORD}/" "$CONFIG_FILE"
+sed -i "s/localhost/${DB_HOST}/" "$CONFIG_FILE"
+
+# Add salts
+php -r '
+function salt(){return bin2hex(random_bytes(32));}
+$file = getenv("WP_CONFIG");
+$config = file_get_contents($file);
+$config = preg_replace("/put your unique phrase here/", salt(), $config);
+file_put_contents($file, $config);
+' WP_CONFIG="$CONFIG_FILE"
+
+# Enable multisite
+cat <<EOF >> "$CONFIG_FILE"
+
+define( 'WP_ALLOW_MULTISITE', true );
+EOF
+
+# Pre-fill domain for multisite
+if [ -n "$DOMAIN" ]; then
+cat <<EOF >> "$CONFIG_FILE"
+define( 'DOMAIN_CURRENT_SITE', '${DOMAIN}' );
+define( 'PATH_CURRENT_SITE', '/' );
+EOF
+fi
+
+chown nginx:nginx "$CONFIG_FILE"
+
+echo "[40-wpconfig] wp-config.php created successfully."

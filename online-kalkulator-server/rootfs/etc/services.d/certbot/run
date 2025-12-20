@@ -1,0 +1,28 @@
+#!/usr/bin/with-contenv sh
+
+DOMAIN=$(bashio::config 'domain')
+EMAIL=$(bashio::config 'email')
+
+mkdir -p /data/certs
+
+# First-time certificate
+if [ ! -f "/data/certs/live/$DOMAIN/fullchain.pem" ]; then
+    certbot certonly --standalone \
+        -d "$DOMAIN" \
+        --email "$EMAIL" \
+        --agree-tos \
+        --non-interactive \
+        --config-dir /data/certs \
+        --work-dir /data/certs \
+        --logs-dir /data/certs
+fi
+
+# Renewal loop
+while true; do
+    certbot renew \
+        --config-dir /data/certs \
+        --work-dir /data/certs \
+        --logs-dir /data/certs \
+        --quiet
+    sleep 12h
+done
