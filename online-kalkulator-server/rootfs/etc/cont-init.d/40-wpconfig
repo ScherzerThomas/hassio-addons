@@ -37,14 +37,11 @@ sed -i "s/username_here/${DB_USER}/" "$CONFIG_FILE"
 sed -i "s/password_here/${DB_USER_PASSWORD}/" "$CONFIG_FILE"
 sed -i "s/localhost/${DB_HOST}/" "$CONFIG_FILE"
 
-# Add salts
-php -r '
-function salt(){return bin2hex(random_bytes(32));}
-$file = getenv("WP_CONFIG");
-$config = file_get_contents($file);
-$config = preg_replace("/put your unique phrase here/", salt(), $config);
-file_put_contents($file, $config);
-' WP_CONFIG="$CONFIG_FILE"
+# Generate 64-char random hex salt
+SALT=$(head -c 32 /dev/urandom | xxd -p)
+
+sed -i "s/put your unique phrase here/${SALT}/g" "$CONFIG_FILE"
+
 
 # Enable multisite
 cat <<EOF >> "$CONFIG_FILE"
