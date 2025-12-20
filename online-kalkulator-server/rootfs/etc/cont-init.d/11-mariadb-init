@@ -1,0 +1,21 @@
+#!/usr/bin/with-contenv bash
+source /usr/lib/bashio/bashio.sh
+set -e
+
+mkdir -p /data/mysql
+mkdir -p /run/mysqld
+
+# Create mysql user if missing
+if ! id mysql &>/dev/null; then
+    adduser -D -h /data/mysql -s /bin/false mysql
+fi
+
+# Fix permissions
+chown -R mysql:mysql /data/mysql
+chown -R mysql:mysql /run/mysqld
+
+# Initialize database if missing
+if [ ! -d /data/mysql/mysql ]; then
+    bashio::log.info "Initializing MariaDB data directory..."
+    mariadb-install-db --user=mysql --datadir=/data/mysql
+fi

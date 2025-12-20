@@ -1,13 +1,2 @@
 #!/usr/bin/with-contenv bash
-source /usr/lib/bashio/bashio.sh
-
-
-mkdir -p /data/mysql
-
-if [ ! -d /data/mysql/mysql ]; then
-    echo "Initializing MariaDB..."
-    mysql_install_db --user=mysql --datadir=/data/mysql
-fi
-
 exec mysqld --datadir=/data/mysql --user=mysql
-
