@@ -1,2 +1,0 @@
-rootfs/etc/cont-init.d/* text eol=lf chmod=+x
-rootfs/etc/services.d/*/run text eol=lf chmod=+x
