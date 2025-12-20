@@ -49,3 +49,5 @@ EOF
 bashio::log.info "MariaDB users and database configured successfully."
 
 exit 0
+
+
