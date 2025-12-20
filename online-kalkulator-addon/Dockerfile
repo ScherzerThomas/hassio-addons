@@ -13,8 +13,11 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Install Python dependencies first (better caching)
+RUN python3 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
 COPY requirements.txt /app/
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY run.sh /app/run.sh
