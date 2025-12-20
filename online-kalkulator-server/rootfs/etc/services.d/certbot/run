@@ -1,4 +1,6 @@
-#!/usr/bin/with-contenv sh
+#!/usr/bin/with-contenv bash
+source /usr/lib/bashio/bashio.sh
+
 
 DOMAIN=$(bashio::config 'domain')
 EMAIL=$(bashio::config 'email')

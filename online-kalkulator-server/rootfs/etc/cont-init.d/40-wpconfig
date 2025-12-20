@@ -1,4 +1,6 @@
-#!/usr/bin/with-contenv sh
+#!/usr/bin/with-contenv bash
+source /usr/lib/bashio/bashio.sh
+
 
 # 40-wpconfig
 # Generates wp-config.php using HA add-on config values.

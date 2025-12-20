@@ -1,3 +1,5 @@
-#!/usr/bin/with-contenv sh
+#!/usr/bin/with-contenv bash
+source /usr/lib/bashio/bashio.sh
+
 exec nginx -g "daemon off;"
 

@@ -1,4 +1,6 @@
-#!/usr/bin/with-contenv sh
+#!/usr/bin/with-contenv bash
+source /usr/lib/bashio/bashio.sh
+
 
 # 30-mariadb-users
 # Initializes MariaDB using passwords provided in HA add-on config.
