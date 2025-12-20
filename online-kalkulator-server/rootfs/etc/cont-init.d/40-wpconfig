@@ -41,7 +41,7 @@ sed -i "s/localhost/${DB_HOST}/" "$CONFIG_FILE"
 # Replace all 8 WordPress salts with unique random values
 for i in {1..8}; do
     SALT=$(head -c 32 /dev/urandom | xxd -p)
-    sed -i "0|put your unique phrase here|s||${SALT}|" "$CONFIG_FILE"
+    sed -i "0,#put your unique phrase here#s##${SALT}#" "$CONFIG_FILE"
 done
 
 # Enable multisite
