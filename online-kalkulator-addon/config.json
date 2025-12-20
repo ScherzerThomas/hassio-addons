@@ -1,0 +1,14 @@
+{
+  "name": "Online-Kalkulator Addon",
+  "version": "1.0.0",
+  "slug": "online-kalkulator-addon",
+  "description": "REST-API backend for online-kalkulator",
+  "startup": "services",
+  "boot": "auto",
+  "ports": {
+    "8000/tcp": 8000
+  },
+  "host_network": false,
+  "options": {},
+  "schema": {}
+}
