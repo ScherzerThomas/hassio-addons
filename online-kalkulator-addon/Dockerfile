@@ -1,16 +1,26 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/aarch64-base:latest
+# Home Assistant will automatically inject the correct base image
+ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Install Python
-RUN apk add --no-cache python3 py3-pip
+# Install Python and required system packages
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    py3-setuptools \
+    py3-wheel
 
+# Create working directory
 WORKDIR /app
 
-COPY requirements.txt .
+# Install Python dependencies first (better caching)
+COPY requirements.txt /app/
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copy application files
+COPY run.sh /app/run.sh
 
+# Ensure run script is executable
 RUN chmod a+x /app/run.sh
 
+# Default command
 CMD ["/app/run.sh"]
