@@ -1,12 +1,13 @@
 FROM debian:stable
 
-# Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libreoffice \
         python3 \
-        python3-pip \
         python3-venv \
+        python3-fastapi \
+        python3-pydantic \
+        python3-uvicorn \
         ca-certificates \
         curl && \
     apt-get clean && \
@@ -15,11 +16,12 @@ RUN apt-get update && \
 # Create app directory
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt /app/
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Create virtual environment
+RUN python3 -m venv /app/venv
 
-# Copy application code
+# Install only missing packages inside venv (allowed)
+RUN /app/venv/bin/pip install openpyxl
+
 COPY . /app/
 RUN chmod +x /app/run.sh
 
