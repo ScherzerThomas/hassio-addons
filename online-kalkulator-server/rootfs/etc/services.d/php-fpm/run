@@ -1,5 +1,9 @@
 #!/usr/bin/with-contenv bash
 source /usr/lib/bashio/bashio.sh
 
-exec php-fpm -F
+echo Listing PHP versions
+ls /usr/sbin | grep php
+
+# Running PHP
+exec php-fpm82 -F
 
