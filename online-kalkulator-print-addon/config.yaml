@@ -1,5 +1,5 @@
 name: "Online-Kalkulator Addon"
-description: "REST-API backend for online-kalkulator"
+description: "REST-API backend for online-kalkulator - excel pdf"
 version: "1.0.0"
 slug: "online-kalkulator-printaddon"
 init: false
