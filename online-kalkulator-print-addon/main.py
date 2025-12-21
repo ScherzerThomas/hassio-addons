@@ -20,6 +20,9 @@ class Payload(BaseModel):
 
 @app.post("/generate-excel-pdf")
 def generate_excel_pdf(payload: Payload):
+    # -----------------------------
+    # 1. CREATE EXCEL WORKBOOK
+    # -----------------------------
     wb = Workbook()
     ws = wb.active
     ws.title = "Data"
@@ -32,19 +35,37 @@ def generate_excel_pdf(payload: Payload):
         ws[f"C{idx}"] = item.qty
         ws[f"D{idx}"] = f"=B{idx}*C{idx}"
 
+    # Save Excel to temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_excel:
         wb.save(tmp_excel.name)
         excel_path = tmp_excel.name
 
-    pdf_path = excel_path.replace(".xlsx", ".pdf")
-
+    # -----------------------------
+    # 2. CONVERT EXCEL → PDF USING LIBREOFFICE
+    # -----------------------------
+    output_dir = tempfile.mkdtemp()
     subprocess.run(
-        ["unoconv", "-f", "pdf", excel_path],
+        [
+            "libreoffice",
+            "--headless",
+            "--convert-to", "pdf",
+            "--outdir", output_dir,
+            excel_path
+        ],
         check=True
     )
 
+    pdf_path = os.path.join(
+        output_dir,
+        os.path.basename(excel_path).replace(".xlsx", ".pdf")
+    )
+
+    # -----------------------------
+    # 3. STREAM PDF BACK
+    # -----------------------------
     pdf_file = open(pdf_path, "rb")
 
+    # Cleanup Excel file (PDF cleaned after streaming)
     os.remove(excel_path)
 
     return StreamingResponse(
