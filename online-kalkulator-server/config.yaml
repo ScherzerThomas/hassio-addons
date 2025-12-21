@@ -1,6 +1,6 @@
 name: "Online-Kalkulator-Server"
 description: "Nginx + PHP + WordPress + MariaDB + phpMyAdmin + Let's Encrypt"
-version: "1.0.0"
+version: "1.0.1"
 slug: "online-kalkulator-server"
 init: false
 startup: "services"
