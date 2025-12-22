@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 cd /app
 
+source /app/venv/bin/activate
+
 # Use venv python
-/app/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+exec uvicorn main:app --host 0.0.0.0 --port 8000
