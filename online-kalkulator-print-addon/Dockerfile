@@ -5,9 +5,7 @@ RUN apt-get update && \
         libreoffice \
         python3 \
         python3-venv \
-        python3-fastapi \
-        python3-pydantic \
-        python3-uvicorn \
+        python3-pip \
         ca-certificates \
         curl && \
     apt-get clean && \
@@ -19,10 +17,16 @@ WORKDIR /app
 # Create virtual environment
 RUN python3 -m venv /app/venv
 
-# Install only missing packages inside venv (allowed)
-RUN /app/venv/bin/pip install openpyxl
+# Copy requirements first (better caching)
+COPY requirements.txt /app/
 
+# Install all Python dependencies inside venv
+RUN /app/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the app
 COPY . /app/
+
+# Make run.sh executable
 RUN chmod +x /app/run.sh
 
 CMD ["/app/run.sh"]
