@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 import os
+import zipfile
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -61,15 +62,21 @@ def generate_excel_pdf(payload: Payload):
     )
 
     # -----------------------------
-    # 3. STREAM PDF BACK
+    # 3. PACKAGE BOTH FILES INTO ZIP
     # -----------------------------
-    pdf_file = open(pdf_path, "rb")
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+        zipf.write(excel_path, arcname="output.xlsx")
+        zipf.write(pdf_path, arcname="output.pdf")
 
-    # Cleanup Excel file (PDF cleaned after streaming)
+    zip_buffer.seek(0)
+
+    # Cleanup temp files
     os.remove(excel_path)
+    os.remove(pdf_path)
 
     return StreamingResponse(
-        pdf_file,
-        media_type="application/pdf",
-        headers={"Content-Disposition": "attachment; filename=output.pdf"}
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=export.zip"}
     )
