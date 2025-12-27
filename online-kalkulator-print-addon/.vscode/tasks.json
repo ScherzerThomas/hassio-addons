@@ -1,26 +1,30 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "docker-build",
-			"label": "docker-build",
-			"platform": "python",
-			"dockerBuild": {
-				"tag": "onlinekalkulatorprintaddon:latest",
-				"dockerfile": "${workspaceFolder}/Dockerfile",
-				"context": "${workspaceFolder}",
-				"pull": true
-			}
-		},
-		{
-			"type": "docker-run",
-			"label": "docker-run: debug",
-			"dependsOn": [
-				"docker-build"
-			],
-			"python": {
-				"file": "main.py"
-			}
-		}
-	]
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "docker-build",
+            "label": "docker-build",
+            "platform": "python",
+            "dockerBuild": {
+                "tag": "onlinekalkulatorprintaddon",
+                "dockerfile": "${workspaceFolder}/Dockerfile",
+                "context": "${workspaceFolder}",
+                "pull": true
+            }
+        },
+        {
+    "type": "docker-run",
+    "label": "docker-run: debug",
+    "dependsOn": ["docker-build"],
+    "dockerRun": {
+        "entrypoint": "/app/venv/bin/python",
+        "command": "-m debugpy --listen 0.0.0.0:5678 --wait-for-client -m uvicorn main:app --host 0.0.0.0 --port 8000"
+    },
+    "python": {
+        "file": "main.py"
+    }
+}
+
+
+    ]
 }
