@@ -1,4 +1,6 @@
 import subprocess
+import platform
+import tempfile
 import os
 import zipfile
 from datetime import datetime
@@ -7,11 +9,17 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List
 from openpyxl import Workbook
-from io import BytesIO
 
 app = FastAPI()
 
-WORKDIR = "/app/workdir"
+
+if platform.system() == "Windows":
+    LIBREOFFICE = r"C:\Program Files\LibreOffice\program\soffice.exe"
+    WORKDIR = r"C:\tmp\workdir"
+else:
+    LIBREOFFICE = "libreoffice"
+    WORKDIR = "/app/workdir"
+
 os.makedirs(WORKDIR, exist_ok=True)
 
 class Item(BaseModel):
@@ -54,27 +62,51 @@ def generate_excel_pdf(payload: Payload):
     # -----------------------------
     # 2. RECALCULATE FORMULAS AND REWRITE XLSX
     # -----------------------------
-    subprocess.run(
-        [
-            "libreoffice",
-            "--headless",
-            "--calc",
-            "--convert-to", "xlsx",
-            "--outdir", WORKDIR,
-            excel_path
-        ],
-        check=True
-    )
 
-    # Replace original Excel with recalculated one
-    os.replace(recalc_path, excel_path)
+
+    # excel_path = path to your original file
+    excel_dir = os.path.dirname(excel_path)
+
+    # Create a temp directory inside the same folder
+    with tempfile.TemporaryDirectory(dir=excel_dir) as tmpdir:
+
+        # Run LibreOffice conversion inside the temp dir
+        subprocess.run(
+            [
+                LIBREOFFICE,
+                "--headless",
+                "--convert-to", "xlsx",
+                "--outdir", tmpdir,
+                excel_path
+            ],
+            check=True
+        )
+
+        # Find the converted file
+        converted = [
+            f for f in os.listdir(tmpdir)
+            if f.endswith(".xlsx")
+        ][0]
+
+        converted_path = os.path.join(tmpdir, converted)
+
+        # Replace original file with recalculated one
+        os.replace(converted_path, excel_path)
+
+        # Temp directory is automatically deleted here
+
+
+    if platform.system() == "Windows":
+        # The ':Zone.Identifier' suffix targets the Alternate Data Stream
+        with open(f"{excel_path}:Zone.Identifier", "w") as f:
+            f.write("[ZoneTransfer]\nZoneId=3")
 
     # -----------------------------
     # 3. CONVERT RECALCULATED XLSX → PDF
     # -----------------------------
     subprocess.run(
         [
-            "libreoffice",
+            LIBREOFFICE,
             "--headless",
             "--calc",
             "--convert-to", "pdf",
@@ -87,18 +119,19 @@ def generate_excel_pdf(payload: Payload):
     # -----------------------------
     # 4. PACKAGE BOTH FILES INTO ZIP
     # -----------------------------
-    zip_buffer = BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
-        zipf.write(excel_path, arcname=f"{base_name}.xlsx")
-        zipf.write(pdf_path,   arcname=f"{base_name}.pdf")
 
-    zip_buffer.seek(0)
-    
-    os.remove(excel_path)
-    os.remove(pdf_path)
+    zip_path = os.path.join(WORKDIR, f"{base_name}.zip") 
+    with open(zip_path, "wb") as file_stream: 
+        with zipfile.ZipFile(file_stream, "w", zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(excel_path, arcname=f"{base_name}.xlsx")
+            zipf.write(pdf_path,   arcname=f"{base_name}.pdf")
+
+    if platform.system() != "Windows":
+        os.remove(excel_path)
+        os.remove(pdf_path)
 
     return StreamingResponse(
-        zip_buffer,
+        open(zip_path, "rb"),
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={base_name}.zip"}
     )
