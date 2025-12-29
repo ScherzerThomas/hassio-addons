@@ -1,15 +1,13 @@
 <script>
 
 var CalculationMapping = {
-    "Bedienpersonalsatz": "fieldname11",
-    "Hilfspersonalsatz": "fieldname13",
-    "Bedienpersonaleinsatz": "fieldname12",
-    "Hilfspersonaleinsatz": "fieldname14",
-    "Geschaeftskostenanteil": "fieldname20",
-    "Personalnebenkostenanteil": "fieldname23",
-    "Grundmaschinennebenkostenanteil": "fieldname50",
-    "WagnisGewinn": "fieldname28",
-    "Leistungsbereich": "fieldname33",
+    "Personalkosten": "fieldname11",
+    "NebenzeitenPersonal": {id: "fieldname23", factor: 0.01 },
+    "NebenzeitenGrundmaschine": { id: "fieldname50", factor: 0.01 },
+    "OrganisationsUnternehmenskosten": {id: "fieldname20", factor: 0.01},
+    "Wagnis": {id: "fieldname28", factor: 0.01},
+    "LeistungsbereichMin": "fieldname55",
+    "LeistungsbereichMax": "fieldname56",
 };
 
 if (typeof Mapping == "undefined") {
@@ -19,18 +17,37 @@ Mapping["Calculation"] = CalculationMapping;
 
 function getNamedField(currForm, name) {
     for (const[mappingName, mapValues]of Object.entries(Mapping)) {
-        var dirtyName = mapValues[name];
-        if (dirtyName) {
-            var targetField = getField(dirtyName, currForm);
-            return targetField;
+        if(name in mapValues){
+            var factor;
+            var fieldId;
+            var fieldIdOrObj = mapValues[name];
+            if(typeof fieldIdOrObj === "string"){
+                fieldId = fieldIdOrObj;
+            }
+            else{
+                if("id" in fieldIdOrObj) fieldId = fieldIdOrObj["id"];
+                if("factor" in fieldIdOrObj) factor = fieldIdOrObj["factor"];
+            }
+
+            if (fieldId) {
+                var targetField = getField(fieldId, currForm);
+                return [targetField, factor];
+            }
         }
     }
+    //no match found
+    return [undefined, undefined];
 }
 
 function setNamedFieldValue(currForm, name, value) {
-    var field = getNamedField(currForm, name);
+    var [field, factor] = getNamedField(currForm, name);
     if (field) {
-        field.setVal(value);
+        if(factor){
+            field.setVal(Number((value/factor).toFixed(6)));
+        }
+        else{
+            field.setVal(value);
+        }
 		return true;
     } else {
 		return false;
@@ -38,9 +55,15 @@ function setNamedFieldValue(currForm, name, value) {
     }
 }
 function getNamedFieldValue(currForm, name) {
-    var field = getNamedField(currForm, name);
+    var [field, factor] = getNamedField(currForm, name);
     if (field) {
-        return field.val();
+        if(factor){
+            return field.val() * factor;
+        }
+        else{
+            return field.val();
+        }
+        
     }
 }
 

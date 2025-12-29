@@ -94,10 +94,10 @@ function exportAllData() {
     var kalkulationData = exportCalculationData(formKalkulation);
 
     var data = {};
-    data["Grundmaschine"] = grundmaschineData;
-    data["Maschine1"] = maschine1Data;
-    data["Maschine2"] = maschine2Data;
-    data["Kalkulation"] = kalkulationData;
+    data["GM"] = grundmaschineData;
+    data["M1"] = maschine1Data;
+    data["M2"] = maschine2Data;
+    data["GK"] = kalkulationData;
     data["version"] = currentFileVersion;
 
     console.log(data);
@@ -120,10 +120,10 @@ function importAllData(data, errorList) {
 
     if (data) {
         var version = data["version"];
-        var grundmaschineData = data["Grundmaschine"];
-        var maschine1Data = data["Maschine1"];
-        var maschine2Data = data["Maschine2"];
-        var kalkulationData = data["Kalkulation"];
+        var grundmaschineData = data["GM"];
+        var maschine1Data = data["M1"];
+        var maschine2Data = data["M2"];
+        var kalkulationData = data["GK"];
 
         if(version !== currentFileVersion){
             errorList.push("Berechnung hat sich seit dem letzten Mal geändert!");

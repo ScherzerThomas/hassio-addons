@@ -4,35 +4,37 @@ var MachinePresetData = {};
 
 var MachineMapping = {
     "Aktiv": "fieldname94",
+    "Name": "fieldname96",
 
     "Anschaffungspreis": "fieldname3",
     "Restwert": "fieldname4",
-	"Zinssatz": "fieldname10",
+	"Zinssatz": { id: "fieldname10", factor: 0.01},
     "Nutzungsdauer": "fieldname98",
     "Jahresstunden": "fieldname6",
-    "FixkostenRel": "fieldname12",
-    "GebuehrenRel": "fieldname18",
-    "VersicherungRel": "fieldname19",
-    "UnterbringungRel": "fieldname20",
-    "MieteRel": "fieldname68",
-
-    "GebuehrenAbs": "fieldname24",
-    "VersicherungAbs": "fieldname23",
-    "UnterbringungAbs": "fieldname22",
+    
     "MieteAbs": "fieldname70",
+    "GebuehrenRel":     { id: "fieldname18", factor: 0.01},
+    "VersicherungRel":  { id: "fieldname19", factor: 0.01},
+    "UnterbringungRel": { id: "fieldname20", factor: 0.01},
+    
 
-    "VariableKostenRel": "fieldname32",
-    "ReparaturenRel": "fieldname33",
-    "ReparaturenAbs": "fieldname34",
-
-    "DieselVerbrauch": "fieldname41",
+    // TODO: remove, only percentual
+    //"MieteRel": "fieldname68",
+    //"FixkostenRel":  "fieldname12", 
+    //"GebuehrenAbs": "fieldname24",
+    //"VersicherungAbs": "fieldname23",
+    //"UnterbringungAbs": "fieldname22",
+    //"VariableKostenRel": "fieldname32",
+    //"ReparaturenAbs": "fieldname34",
+    
+    "TreibstoffVerbrauch": "fieldname41",
+    "TreibstoffKosten": "fieldname40",
     "SchmierstoffVerbrauch": "fieldname43",
+    "SchmierstoffKosten": "fieldname42",
 	"SonstigesVerbrauch": "fieldname45",
-	"DieselKosten": "fieldname40",
-	"SchmierstoffKosten": "fieldname42",
 	"SonstigesKosten": "fieldname44",
+    "ReparaturenRel": "fieldname33",
 	
-    "Name": "fieldname96"
 };
 
 if (typeof Mapping == "undefined") {
@@ -42,18 +44,37 @@ Mapping["Machine"] = MachineMapping;
 
 function getNamedField(currForm, name) {
     for (const[mappingName, mapValues]of Object.entries(Mapping)) {
-        var dirtyName = mapValues[name];
-        if (dirtyName) {
-            var targetField = getField(dirtyName, currForm);
-            return targetField;
+        if(name in mapValues){
+            var factor;
+            var fieldId;
+            var fieldIdOrObj = mapValues[name];
+            if(typeof fieldIdOrObj === "string"){
+                fieldId = fieldIdOrObj;
+            }
+            else{
+                if("id" in fieldIdOrObj) fieldId = fieldIdOrObj["id"];
+                if("factor" in fieldIdOrObj) factor = fieldIdOrObj["factor"];
+            }
+
+            if (fieldId) {
+                var targetField = getField(fieldId, currForm);
+                return [targetField, factor];
+            }
         }
     }
+    //no match found
+    return [undefined, undefined];
 }
 
 function setNamedFieldValue(currForm, name, value) {
-    var field = getNamedField(currForm, name);
+    var [field, factor] = getNamedField(currForm, name);
     if (field) {
-        field.setVal(value);
+        if(factor){
+            field.setVal(Number((value/factor).toFixed(6)));
+        }
+        else{
+            field.setVal(value);
+        }
 		return true;
     } else {
 		return false;
@@ -61,9 +82,15 @@ function setNamedFieldValue(currForm, name, value) {
     }
 }
 function getNamedFieldValue(currForm, name) {
-    var field = getNamedField(currForm, name);
+    var [field, factor] = getNamedField(currForm, name);
     if (field) {
-        return field.val();
+        if(factor){
+            return field.val() * factor;
+        }
+        else{
+            return field.val();
+        }
+        
     }
 }
 
@@ -170,6 +197,8 @@ function machinelistchanged(obj) {
             setNamedFieldValue(currForm, key, value);
         }
         setNamedFieldValue(currForm, "Name", selection);
+        setNamedFieldValue(currForm, "TreibstoffKosten", 1.4);
+        setNamedFieldValue(currForm, "SchmierstoffKosten", 4);
     }
 }
 
