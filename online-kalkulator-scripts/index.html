@@ -1,0 +1,194 @@
+ <script>
+jQuery(function ($) {
+    $(document).one(
+        'showHideDepEvent',
+        function () {
+    });
+});
+
+jQuery(function ($) {
+    $(document).ready(function () {
+        console.log("init");
+        var mk_grundmaschine = $('#fieldname80_1');
+        var mk_maschine1 = $('#fieldname80_2');
+        var mk_maschine2 = $('#fieldname80_3');
+        var typ_grundmaschine_src = $('#fieldname96_1');
+        var typ_maschine1_src = $('#fieldname96_2');
+        var typ_maschine2_src = $('#fieldname96_3');
+
+        var gk_grundmaschine = getField('fieldname8', '4');
+        var gk_maschine1 = getField('fieldname9', '4');
+        var gk_maschine2 = getField('fieldname10', '4');
+        var typ_grundmaschine = getField('fieldname47', '4');
+        var typ_maschine1 = getField('fieldname48', '4');
+        var typ_maschine2 = getField('fieldname49', '4');
+
+        var grundmaschineAct,
+        maschine1Act,
+        maschine2Act;
+
+        mk_grundmaschine.change(function () {
+            grundmaschineAct = mk_grundmaschine.val();
+            console.log("Kosten der Grundmaschine geändert auf " + grundmaschineAct);
+            gk_grundmaschine.setVal(grundmaschineAct);
+        });
+
+        mk_maschine1.change(function () {
+            maschine1Act = mk_maschine1.val();
+            console.log("Kosten der Maschine1 geändert auf " + maschine1Act);
+            gk_maschine1.setVal(maschine1Act);
+        });
+
+        mk_maschine2.change(function () {
+            maschine2Act = mk_maschine2.val();
+            console.log("Kosten der Maschine2 geändert auf " + maschine2Act);
+            gk_maschine2.setVal(maschine2Act);
+        });
+
+        typ_grundmaschine_src.change(function () {
+            typ_grundmaschine.setVal(typ_grundmaschine_src.val())
+        });
+        typ_maschine1_src.change(function () {
+            typ_maschine1.setVal(typ_maschine1_src.val())
+        });
+        typ_maschine2_src.change(function () {
+            typ_maschine2.setVal(typ_maschine2_src.val())
+        });
+    });
+});
+
+currentFileVersion = 2;
+
+function formatDate(date) {  
+  if (!(date instanceof Date)) {
+    throw new Error('Invalid "date" argument. You must pass a date instance')
+  }
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`;
+}
+
+function download(content, fileName, contentType) {
+    const a = document.createElement("a");
+    const file = new Blob([content], {
+        type: contentType
+    });
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+}
+
+function exportAllData() {
+    console.log("data export started");
+    var formGrundmaschine = document.getElementById('cp_calculatedfieldsf_pform_1');
+    var formMaschine1 = document.getElementById('cp_calculatedfieldsf_pform_2');
+    var formMaschine2 = document.getElementById('cp_calculatedfieldsf_pform_3');
+    var formKalkulation = document.getElementById('cp_calculatedfieldsf_pform_4');
+
+    var grundmaschineData = exportMachineData(formGrundmaschine);
+    var maschine1Data = exportMachineData(formMaschine1);
+    var maschine2Data = exportMachineData(formMaschine2);
+    var kalkulationData = exportCalculationData(formKalkulation);
+
+    var data = {};
+    data["Grundmaschine"] = grundmaschineData;
+    data["Maschine1"] = maschine1Data;
+    data["Maschine2"] = maschine2Data;
+    data["Kalkulation"] = kalkulationData;
+    data["version"] = currentFileVersion;
+
+    console.log(data);
+
+	var now = new Date();
+	var machineName = grundmaschineData["Name"];
+	machineName = machineName.replace(/[/\\?%*:|"<>]/g, '_');
+	var fileName = `online-kalkulator.at_${machineName}_${formatDate(now)}.json`;
+
+    download(JSON.stringify(data, undefined, 2), fileName, "text/plain");
+}
+
+function importAllData(data, errorList) {
+    console.log("data import started");
+    var formGrundmaschine = document.getElementById('cp_calculatedfieldsf_pform_1');
+    var formMaschine1 = document.getElementById('cp_calculatedfieldsf_pform_2');
+    var formMaschine2 = document.getElementById('cp_calculatedfieldsf_pform_3');
+    var formKalkulation = document.getElementById('cp_calculatedfieldsf_pform_4');
+
+
+    if (data) {
+        var version = data["version"];
+        var grundmaschineData = data["Grundmaschine"];
+        var maschine1Data = data["Maschine1"];
+        var maschine2Data = data["Maschine2"];
+        var kalkulationData = data["Kalkulation"];
+
+        if(version !== currentFileVersion){
+            errorList.push("Berechnung hat sich seit dem letzten Mal geändert!");
+            errorList.push("Bitte alle Felder kontrollieren!")
+        }
+        importMachineData(grundmaschineData, formGrundmaschine, errorList);
+        importMachineData(maschine1Data, formMaschine1, errorList);
+        importMachineData(maschine2Data, formMaschine2, errorList);
+        importCalculationData(kalkulationData, formKalkulation, errorList);
+        
+        console.log("import finished!");
+    } else {
+		errorList.push("JSON Object ist leer!");
+        console.error("JSON Object is leer!");
+    }
+}
+
+function startDataImportByFile() {
+    document.getElementById('loadFile').click();
+}
+
+function importDataByFile(e) {
+	var errorList = []; //create error list
+	
+    var file = e.target.files[0];
+    if (!file){
+		errorList.push("No file selected!");
+        return;
+	}
+    var reader = new FileReader();
+    reader.onload = function (e) {
+		try{
+			var content = e.target.result;
+			if(content.length < 100000) //valid files are usually much smaller than 100kB
+			{
+				var deserializedContent = JSON.parse(content);
+				importAllData(deserializedContent, errorList);
+			}
+			else
+			{
+				//abort import
+				errorList.push("Datei ist ungültig / zu groß!");
+			}
+		}
+		catch (error) {
+			errorList.push("Fehler: " + error.toString());
+			console.error(error);
+		}
+		finally{
+			var statusElement = document.getElementById('statusText');
+			if(errorList.length > 0)
+			{
+				errorList.unshift(""); //Add empty line
+				errorList.unshift("Achtung: Daten können unvollständig sein!"); //add warning for user
+				statusElement.removeAttribute("hidden");
+				statusElement.innerHTML = errorList.join('\r\n');
+			}
+			else
+			{
+				statusElement.removeAttribute("hidden");
+				statusElement.innerHTML = "Import erfolgreich";
+			}
+		}
+    }
+    reader.readAsText(file);
+}
+
+</script>

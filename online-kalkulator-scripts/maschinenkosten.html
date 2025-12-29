@@ -1,0 +1,186 @@
+<script>
+
+var MachinePresetData = {};
+
+var MachineMapping = {
+    "Aktiv": "fieldname94",
+
+    "Anschaffungspreis": "fieldname3",
+    "Restwert": "fieldname4",
+	"Zinssatz": "fieldname10",
+    "Nutzungsdauer": "fieldname98",
+    "Jahresstunden": "fieldname6",
+    "FixkostenRel": "fieldname12",
+    "GebuehrenRel": "fieldname18",
+    "VersicherungRel": "fieldname19",
+    "UnterbringungRel": "fieldname20",
+    "MieteRel": "fieldname68",
+
+    "GebuehrenAbs": "fieldname24",
+    "VersicherungAbs": "fieldname23",
+    "UnterbringungAbs": "fieldname22",
+    "MieteAbs": "fieldname70",
+
+    "VariableKostenRel": "fieldname32",
+    "ReparaturenRel": "fieldname33",
+    "ReparaturenAbs": "fieldname34",
+
+    "DieselVerbrauch": "fieldname41",
+    "SchmierstoffVerbrauch": "fieldname43",
+	"SonstigesVerbrauch": "fieldname45",
+	"DieselKosten": "fieldname40",
+	"SchmierstoffKosten": "fieldname42",
+	"SonstigesKosten": "fieldname44",
+	
+    "Name": "fieldname96"
+};
+
+if (typeof Mapping == "undefined") {
+    Mapping = {};
+}
+Mapping["Machine"] = MachineMapping;
+
+function getNamedField(currForm, name) {
+    for (const[mappingName, mapValues]of Object.entries(Mapping)) {
+        var dirtyName = mapValues[name];
+        if (dirtyName) {
+            var targetField = getField(dirtyName, currForm);
+            return targetField;
+        }
+    }
+}
+
+function setNamedFieldValue(currForm, name, value) {
+    var field = getNamedField(currForm, name);
+    if (field) {
+        field.setVal(value);
+		return true;
+    } else {
+		return false;
+        //console.log("Failed to set field " + name);
+    }
+}
+function getNamedFieldValue(currForm, name) {
+    var field = getNamedField(currForm, name);
+    if (field) {
+        return field.val();
+    }
+}
+
+function exportMachineData(currForm) {
+    var resultObject = {};
+    for (const[key, value]of Object.entries(MachineMapping)) {
+        var fieldValue = getNamedFieldValue(currForm, key);
+
+        if (typeof fieldValue === "string") {
+            //remove leading and trailing Quotes from string. They are from the form
+            fieldValue = fieldValue.replace(/(^"|"$)/g, '');
+        }
+
+        if (fieldValue != null) {
+            resultObject[key] = fieldValue;
+        }
+    }
+
+    return resultObject;
+}
+
+function setMachinePresets(currForm) {
+    var currentSelection = getNamedFieldValue(currForm, "Selection").replaceAll('"', '');
+    var selectedMachine = MachinePresetData[currentSelection];
+    if (selectedMachine) {
+        for (const[key, value]of Object.entries(selectedMachine)) {
+            setNamedFieldValue(currForm, key, value);
+        }
+        setNamedFieldValue(currForm, "Name", currentSelection);
+    } else {
+        //machine is not in the MachinePresetData
+        console.log("selected machine " + currentSelection + " is not in the MachinePresetData!");
+    }
+}
+
+var getJSON = function (url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'json';
+    xhr.onload = function () {
+        var status = xhr.status;
+        if (status === 200) {
+            callback(null, xhr.response);
+        } else {
+            callback(status, xhr.response);
+        }
+    };
+    xhr.send();
+};
+
+function onMachineListLoaded(data) {
+    machinesList = data;
+    //console.log(data);
+    var selects = document.getElementsByTagName("select");
+    for (var element of selects) {
+        //console.log(element);
+        if (element.name.startsWith("fieldname87")) {
+            var isGrundmaschine = element.name.endsWith("_1");
+
+            html = "";
+            html += "<option disabled selected value> -- Maschine auswählen -- </option>";
+            for (const[machineName, machineData]of Object.entries(machinesList)) {
+                var machineIsGrundmaschine = machineData["Grundmaschine"];
+                if (machineIsGrundmaschine === isGrundmaschine) {
+                    html += "<option value='\"" + machineName + "\"'>" + machineName + "</option>"
+                }
+            }
+
+            //console.log("match");
+            element.innerHTML = html;
+            element.setAttribute("onchange", "machinelistchanged(this)");
+
+            //element.onchange =
+        }
+    }
+    //document.getElementById("machinelist").innerHTML = html;
+}
+
+var machinesList; //contains array with all available machines
+if (typeof machinesList === "undefined") {
+    getJSON('/wp-admin/files/machines.json',
+        function (err, data) {
+        if (err !== null) {
+            console.error("failed to load machines");
+            //alert('Something went wrong: ' + err);
+        } else {
+            machinesList = data;
+            onMachineListLoaded(machinesList);
+        }
+    });
+} else {
+    onMachineListLoaded(machinesList);
+}
+
+function machinelistchanged(obj) {
+    var selection = obj.value.replaceAll('"', '');
+    var currForm = obj.closest('form');
+
+    var selectedMachine = machinesList[selection];
+    if (selectedMachine) {
+        console.log("loading Machine " + selection);
+        setNamedFieldValue(currForm, "Restwert", 0); //initialize with zero to prevent validation errors
+        for (const[key, value]of Object.entries(selectedMachine)) {
+            setNamedFieldValue(currForm, key, value);
+        }
+        setNamedFieldValue(currForm, "Name", selection);
+    }
+}
+
+function importMachineData(data, form, errorList) {
+    setNamedFieldValue(form, "Restwert", 0); //initialize with zero to prevent validation errors
+    for (const[key, value]of Object.entries(data)) {
+        var success = setNamedFieldValue(form, key, value);
+		if(!success){
+			errorList.push(`Fehler beim Schreiben von ${key} auf ${value}!`);
+		}
+    }
+}
+
+</script>

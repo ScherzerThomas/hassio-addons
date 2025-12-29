@@ -1,0 +1,26 @@
+<script>
+jQuery(function ($) {
+    var datasource = 'https://www.bmk.gv.at/themen/energie/preise/aktuelle_preise.html';
+	try{
+		$.get(datasource, function (data) {
+			var $data = $(data);
+			var newestRow = $data.find("#content").find("table.table > tbody > tr:first");
+			var preisdatum = newestRow.find("td:nth-child(1)").html();
+			var dieselpreis = parseFloat(newestRow.find("td:nth-child(2)").html().replace(',', '.')) * 0.8;
+			
+			var els = document.getElementsByTagName("input");
+			for(el of els)
+				{
+					if(el.name && el.name.startsWith("fieldname83"))
+						{
+							el.value = preisdatum  + ": " + dieselpreis.toFixed(3) + " €/l";
+						}
+				}
+		});
+	}
+	catch(e)
+	{
+		console.log(e);
+	}
+});
+</script>

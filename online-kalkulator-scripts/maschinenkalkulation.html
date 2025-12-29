@@ -1,0 +1,69 @@
+<script>
+
+var CalculationMapping = {
+    "Bedienpersonalsatz": "fieldname11",
+    "Hilfspersonalsatz": "fieldname13",
+    "Bedienpersonaleinsatz": "fieldname12",
+    "Hilfspersonaleinsatz": "fieldname14",
+    "Geschaeftskostenanteil": "fieldname20",
+    "Personalnebenkostenanteil": "fieldname23",
+    "Grundmaschinennebenkostenanteil": "fieldname50",
+    "WagnisGewinn": "fieldname28",
+    "Leistungsbereich": "fieldname33",
+};
+
+if (typeof Mapping == "undefined") {
+    Mapping = {};
+}
+Mapping["Calculation"] = CalculationMapping;
+
+function getNamedField(currForm, name) {
+    for (const[mappingName, mapValues]of Object.entries(Mapping)) {
+        var dirtyName = mapValues[name];
+        if (dirtyName) {
+            var targetField = getField(dirtyName, currForm);
+            return targetField;
+        }
+    }
+}
+
+function setNamedFieldValue(currForm, name, value) {
+    var field = getNamedField(currForm, name);
+    if (field) {
+        field.setVal(value);
+		return true;
+    } else {
+		return false;
+        //console.log("Failed to set field " + name);
+    }
+}
+function getNamedFieldValue(currForm, name) {
+    var field = getNamedField(currForm, name);
+    if (field) {
+        return field.val();
+    }
+}
+
+function exportCalculationData(currForm) {
+    var resultObject = {};
+    for (const[key, value]of Object.entries(CalculationMapping)) {
+        var fieldValue = getNamedFieldValue(currForm, key);
+
+        if (fieldValue != null) {
+            resultObject[key] = fieldValue;
+        }
+    }
+
+    return resultObject;
+}
+
+function importCalculationData(data, form, errorList) {
+    for (const[key, value]of Object.entries(data)) {
+		var success = setNamedFieldValue(form, key, value);
+		if(!success){
+			errorList.push(`Fehler beim Schreiben von ${key} auf ${value}!`);
+		}
+    }
+}
+
+</script>
