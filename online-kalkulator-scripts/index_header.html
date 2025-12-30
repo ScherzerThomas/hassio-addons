@@ -1,19 +1,21 @@
-<script src="cdnjs.cloudflare.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <div class="links">
     <a href="index.php/anleitung/" target="_blank" rel="noopener"><button>Anleitung</button></a>
     
     <!-- Main Action Button -->
-    <button id="calcBtn" type="button" onclick="handleCalculation()">Berechnung starten</button>
-    
+    <button id="calcBtn" type="button" onclick="createReport()">Daten-Export</button>
+    <!--
     <button type="button" onclick="exportAllData()">Daten-Export</button>
     <button type="button" onclick="startDataImportByFile()">Daten-Import</button>
+    
     <input id="loadFile" type="file" accept="application/JSON" style="visibility:hidden;" onchange="importDataByFile(event)">
+    -->
     
     <!-- Result Buttons (Hidden by default) -->
-    <div id="resultButtons" style="display:none; margin-top: 10px;">
+    <div id="resultButtons" style="display:none;">
         <button id="pdfBtn" style="background-color: #d32f2f; color: white;">📄 PDF Bericht</button>
             <button id="excelBtn" style="background-color: #1f6e43; color: white;">📊 Excel Datei</button>
-            <button id="zipBtn" style="background-color: #555; color: white;">📦 Alles als ZIP</button>
+            <button id="zipBtn" style="background-color: #555; color: white;">📦 ZIP Download</button>
     </div>
 
     <!-- Spinner Overlay -->
