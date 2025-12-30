@@ -229,7 +229,6 @@ async function createReport() {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                //'X-API-KEY': 'dein_shared_secret' // Security check
             },
             body: JSON.stringify(payload)
         });
@@ -259,7 +258,7 @@ async function createReport() {
         // 2. Setup "Everything as ZIP" Button (Direct use of Response Blob)
         const zipBtn = document.getElementById('zipBtn');
         zipBtn.onclick = () => {
-            const url = URL.createObjectURL(zipBlob);
+            const url = URL.createObjectURL(blob);
             triggerDownload(url, fileName);
         };
 
