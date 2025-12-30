@@ -37,9 +37,11 @@ app.add_middleware(
 if platform.system() == "Windows":
     LIBREOFFICE = r"C:\Program Files\LibreOffice\program\soffice.exe"
     WORKDIR = r"C:\tmp\workdir"
+    APPDIR = "./"
 else:
     LIBREOFFICE = "libreoffice"
     WORKDIR = "/app/workdir"
+    APPDIR = "/app"
 
 os.makedirs(WORKDIR, exist_ok=True)
 
@@ -180,7 +182,7 @@ def generate_excel_pdf(payload: Arbeitsverfahren,
 
 
     #data_path = os.path.join(WORKDIR, f"data.json")
-    template_path = os.path.join(WORKDIR, f"Template.xlsx")
+    template_path = os.path.join(APPDIR, f"Template.xlsx")
     excel_path = os.path.join(WORKDIR, f"{base_name}.xlsx")
     pdf_path   = os.path.join(WORKDIR, f"{base_name}.pdf")
     #recalc_path = os.path.join(WORKDIR, f"{base_name}_recalc.xlsx")
