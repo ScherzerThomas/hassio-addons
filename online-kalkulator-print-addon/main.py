@@ -4,12 +4,13 @@ import tempfile
 import os
 import json
 import zipfile
+import re
 from datetime import datetime
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.workbook.defined_name import DefinedName
@@ -30,6 +31,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["POST", "GET"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"] 
 )
 
 if platform.system() == "Windows":
@@ -166,18 +168,22 @@ def hide_row_by_named_variable(ws: Worksheet, variable_name: str, hide: bool = T
                     ws.row_dimensions[r].hidden = hide
 
 @app.post("/generate-excel-pdf")
-def generate_excel_pdf(payload: Arbeitsverfahren):
+def generate_excel_pdf(payload: Arbeitsverfahren,
+                       filename: Optional[str] = Query(None)
+                       ):
     # -----------------------------
     # 0. GENERATE TIMESTAMPED NAME
     # -----------------------------
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_name = f"REPORT_{timestamp}"
+    base_name = filename or f"REPORT_{timestamp}"
+    base_name = re.sub(r'[^\w\-_]', '_', base_name)
 
-    data_path = os.path.join(WORKDIR, f"data.json")
+
+    #data_path = os.path.join(WORKDIR, f"data.json")
     template_path = os.path.join(WORKDIR, f"Template.xlsx")
     excel_path = os.path.join(WORKDIR, f"{base_name}.xlsx")
     pdf_path   = os.path.join(WORKDIR, f"{base_name}.pdf")
-    recalc_path = os.path.join(WORKDIR, f"{base_name}_recalc.xlsx")
+    #recalc_path = os.path.join(WORKDIR, f"{base_name}_recalc.xlsx")
 
     # -----------------------------
     # 1. CREATE EXCEL WORKBOOK
@@ -292,6 +298,14 @@ def generate_excel_pdf(payload: Arbeitsverfahren):
     if platform.system() != "Windows":
         os.remove(excel_path)
         os.remove(pdf_path)
+
+    # Automatically handles the file opening, streaming, 
+    # and Content-Disposition header
+    return FileResponse(
+        path=zip_path, 
+        filename=f"{base_name}.zip", 
+        media_type="application/zip"
+    )
 
     return StreamingResponse(
         open(zip_path, "rb"),

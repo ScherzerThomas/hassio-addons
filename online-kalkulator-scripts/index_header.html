@@ -1,7 +1,38 @@
+<script src="cdnjs.cloudflare.com"></script>
 <div class="links">
-<a href="index.php/anleitung/" target="”_blank”" rel="noopener"><button>Anleitung</button></a>
-<button type="button" onclick="exportAllData()">Daten-Export</button>
-<button type="button" onclick="startDataImportByFile()">Daten-Import</button>
-<input id="loadFile" type="file" accept="application/JSON" style="visibility:hidden;" onchange="importDataByFile(event)">
-<pre hidden="" id="statusText"></pre>
+    <a href="index.php/anleitung/" target="_blank" rel="noopener"><button>Anleitung</button></a>
+    
+    <!-- Main Action Button -->
+    <button id="calcBtn" type="button" onclick="handleCalculation()">Berechnung starten</button>
+    
+    <button type="button" onclick="exportAllData()">Daten-Export</button>
+    <button type="button" onclick="startDataImportByFile()">Daten-Import</button>
+    <input id="loadFile" type="file" accept="application/JSON" style="visibility:hidden;" onchange="importDataByFile(event)">
+    
+    <!-- Result Buttons (Hidden by default) -->
+    <div id="resultButtons" style="display:none; margin-top: 10px;">
+        <button id="pdfBtn" style="background-color: #d32f2f; color: white;">📄 PDF Bericht</button>
+            <button id="excelBtn" style="background-color: #1f6e43; color: white;">📊 Excel Datei</button>
+            <button id="zipBtn" style="background-color: #555; color: white;">📦 Alles als ZIP</button>
+    </div>
+
+    <!-- Spinner Overlay -->
+    <div id="spinnerOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; text-align:center; padding-top:20%;">
+        <div class="spinner"></div>
+        <p>Export läuft, bitte warten...</p>
+    </div>
 </div>
+
+<style>
+/* Modern CSS Spinner */
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>

@@ -202,4 +202,99 @@ function importDataByFile(e) {
     reader.readAsText(file);
 }
 
+
+async function handleCalculation() {
+    const spinner = document.getElementById('spinnerOverlay');
+    const resultDiv = document.getElementById('resultButtons');
+    
+    // 1. Show Spinner
+    spinner.style.display = 'block';
+    resultDiv.style.display = 'none';
+
+    try {
+        // Collect your data (your existing logic)
+        var [payload, machineName] = collectData();
+
+        var requestedFileName = `Kalkulation_${machineName}_${formatDate(new Date())}`;
+
+        // URLSearchParams kodiert Sonderzeichen automatisch
+        const params = new URLSearchParams({ filename: requestedFileName });
+
+        // Append the filename as a query parameter (?filename=...)
+        const _0x4a21 = "aHR0cHM6Ly9hcGktb25saW5lLWthbmt1bGF0b3IuZHVja2Rucy5vcmcvZ2VuZXJhdGUtZXhjZWwtcGRm";
+        const baseUrl = "https://api-online-kalkulator.duckdns.org/generate-excel-pdf"//atob(_0x4a21);
+        const url = `${baseUrl}?${params.toString()}`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                //'X-API-KEY': 'dein_shared_secret' // Security check
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('API Fehler');
+
+
+        //Parse the filename from the header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let fileName = `${requestedFileName}.zip`; // Fallback
+        if (contentDisposition && contentDisposition.includes('filename=')) {
+            // Basic extraction logic
+            fileName = contentDisposition
+                .split('filename=')[1]
+                .split(';')[0]
+                .replace(/"/g, ''); // Remove quotes if present
+        }
+
+        // 2. Process ZIP Response
+        const blob = await response.blob();
+        const zip = await JSZip.loadAsync(blob);
+
+        // 1. Setup Individual Buttons (Extract from ZIP)
+        setupIndividualDownload('pdfBtn', zip, fileName.replace(/\.zip$/i, ".pdf"), "application/pdf");
+        setupIndividualDownload('excelBtn', zip, fileName.replace(/\.zip$/i, ".xlsx"), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        // 2. Setup "Everything as ZIP" Button (Direct use of Response Blob)
+        const zipBtn = document.getElementById('zipBtn');
+        zipBtn.onclick = () => {
+            const url = URL.createObjectURL(zipBlob);
+            triggerDownload(url, fileName);
+        };
+
+        // 4. Show Result UI
+        resultDiv.style.display = 'block';
+
+    } catch (error) {
+        console.error(error);
+        alert("Fehler beim Export: " + error.message);
+    } finally {
+        // 5. Hide Spinner
+        spinner.style.display = 'none';
+    }
+}
+
+function setupIndividualDownload(btnId, zip, fileName, mimeType) {
+    const btn = document.getElementById(btnId);
+    btn.onclick = async () => {
+        const file = zip.file(fileName);
+        if (!file) return alert("Datei nicht im ZIP gefunden.");
+        
+        const content = await file.async("blob");
+        const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+        triggerDownload(url, fileName);
+    };
+}
+
+function triggerDownload(url, fileName) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
 </script>
