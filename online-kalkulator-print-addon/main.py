@@ -207,8 +207,10 @@ def generate_excel_pdf(payload: Arbeitsverfahren,
         model_instance = getattr(payload, group)
         for key, value in model_instance.model_dump().items():
             target: str = f"{group}_{key}"
-            if key == "Aktiv": 
-                hide_row_by_named_variable(ws, target, True)
+            if key == "Aktiv":
+                # Hide all inactive rows 
+                if value == 0:
+                    hide_row_by_named_variable(ws, target, True)
             else:
                 set_named_value(ws, target, value)
 
