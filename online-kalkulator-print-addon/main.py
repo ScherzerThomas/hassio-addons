@@ -6,14 +6,31 @@ import json
 import zipfile
 from datetime import datetime
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List
 from openpyxl import Workbook, load_workbook
+from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.workbook.defined_name import DefinedName
+from openpyxl.utils import range_boundaries
+from openpyxl.cell.cell import Cell
+
+
+
+origins = [
+    "https://online-kalkulator.at",  # Production
+    "http://localhost:8000",             # Local Frontend Dev
+]
 
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["POST", "GET"],
+    allow_headers=["*"],
+)
 
 if platform.system() == "Windows":
     LIBREOFFICE = r"C:\Program Files\LibreOffice\program\soffice.exe"
@@ -24,29 +41,92 @@ else:
 
 os.makedirs(WORKDIR, exist_ok=True)
 
-class Item(BaseModel):
-    name: str
-    price: float
-    qty: float
+class Maschinenkosten(BaseModel):
+    Aktiv: int
+    Name: str
+    Anschaffungspreis: float
+    Restwert: float
+    Zinssatz: float
+    Nutzungsdauer: float
+    Jahresstunden: float
+    MieteAbs: float
+    GebuehrenRel: float
+    VersicherungRel: float
+    UnterbringungRel: float
+    TreibstoffVerbrauch: float
+    TreibstoffKosten: float
+    SchmierstoffVerbrauch: float
+    SchmierstoffKosten: float
+    SonstigesVerbrauch: float
+    SonstigesKosten: float
+    ReparaturenRel: float
 
-class Payload(BaseModel):
-    items: List[Item]
+class Maschinenkalkulation(BaseModel):
+    Personalkosten: float
+    NebenzeitenPersonal: float
+    NebenzeitenGrundmaschine: float
+    OrganisationsUnternehmenskosten: float
+    Wagnis: float
+    LeistungsbereichMin: float
+    LeistungsbereichMax: float
 
-def set_named_value(workbook, name_symbol, new_value):
+class Arbeitsverfahren(BaseModel):
+    GM: Maschinenkosten
+    M1: Maschinenkosten
+    M2: Maschinenkosten
+    GK: Maschinenkalkulation
+    version: int
+
+    # This config block provides the default data for Swagger UI
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "GM": {
+                    "Aktiv": 1, "Name": "Rübenvollernter-Selbstfahrer", "Anschaffungspreis": 600000,
+                    "Restwert": 180000, "Zinssatz": 0.04, "Nutzungsdauer": 10, "Jahresstunden": 350,
+                    "MieteAbs": 0, "GebuehrenRel": 0.001, "VersicherungRel": 0.005, "UnterbringungRel": 0.005,
+                    "TreibstoffVerbrauch": 70, "TreibstoffKosten": 1.4, "SchmierstoffVerbrauch": 0.2,
+                    "SchmierstoffKosten": 4, "SonstigesVerbrauch": 0, "SonstigesKosten": 0, "ReparaturenRel": 1.5
+                },
+                "M1": {
+                    "Aktiv": 0, "Name": "", "Anschaffungspreis": 0, "Restwert": 0, "Zinssatz": 0,
+                    "Nutzungsdauer": 0, "Jahresstunden": 0, "MieteAbs": 0, "GebuehrenRel": 0,
+                    "VersicherungRel": 0, "UnterbringungRel": 0, "TreibstoffVerbrauch": 0,
+                    "TreibstoffKosten": 0, "SchmierstoffVerbrauch": 0, "SchmierstoffKosten": 0,
+                    "SonstigesVerbrauch": 0, "SonstigesKosten": 0, "ReparaturenRel": 0
+                },
+                "M2": {
+                    "Aktiv": 0, "Name": "", "Anschaffungspreis": 0, "Restwert": 0, "Zinssatz": 0,
+                    "Nutzungsdauer": 0, "Jahresstunden": 0, "MieteAbs": 0, "GebuehrenRel": 0,
+                    "VersicherungRel": 0, "UnterbringungRel": 0, "TreibstoffVerbrauch": 0,
+                    "TreibstoffKosten": 0, "SchmierstoffVerbrauch": 0, "SchmierstoffKosten": 0,
+                    "SonstigesVerbrauch": 0, "SonstigesKosten": 0, "ReparaturenRel": 0
+                },
+                "GK": {
+                    "Personalkosten": 32, "NebenzeitenPersonal": 0.25, "NebenzeitenGrundmaschine": 0.1,
+                    "OrganisationsUnternehmenskosten": 0.12, "Wagnis": 0.03,
+                    "LeistungsbereichMin": 1.5, "LeistungsbereichMax": 2.5
+                },
+                "version": 2
+            }
+        }
+    }
+
+def set_named_value(ws: Worksheet, name_symbol, new_value):
     """
     Updates the value of a symbolic name in an openpyxl workbook.
     Handles both cell-based named ranges and named constants.
     """
-    if name_symbol not in workbook.defined_names:
+    if name_symbol not in ws.defined_names:
         raise ValueError(f"Named symbol '{name_symbol}' not found in workbook.")
 
-    defn = workbook.defined_names[name_symbol]
+    defn = ws.defined_names[name_symbol]
     dests = list(defn.destinations)
 
     if dests:
         # Case 1: The name refers to a cell or range (Named Cell)
         for sheet_title, cell_address in dests:
-            ws = workbook[sheet_title]
+            #ws = ws[sheet_title]
             # If it's a single cell reference like $A$1
             if ":" not in cell_address:
                 ws[cell_address] = new_value
@@ -58,11 +138,35 @@ def set_named_value(workbook, name_symbol, new_value):
     else:
         # Case 2: The name is a constant or formula (Named Constant)
         # Directly overwrite the definition with the new numeric value
-        workbook.defined_names[name_symbol] = DefinedName(name_symbol, attr_text=str(new_value))
+        ws.defined_names[name_symbol] = DefinedName(name_symbol, attr_text=str(new_value))
 
+def hide_row_by_named_variable(ws: Worksheet, variable_name: str, hide: bool = True):
+    """
+    Hides the row(s) associated with a specific named range within a worksheet.
+    """
+
+    defn = ws.defined_names.get(variable_name)
+
+    if not defn:
+        # Name not found, exit quietly or raise ValueError
+        return
+
+    # 3. Iterate through destinations (a name can point to multiple areas)
+    for sheet_title, cell_address in defn.destinations:
+        # Only hide if the destination is on the current worksheet
+        if sheet_title == ws.title:
+            # range_boundaries returns (min_col, min_row, max_col, max_row)
+            # e.g., '$A$10' -> (1, 10, 1, 10)
+            res = range_boundaries(cell_address)
+            min_row, max_row = res[1], res[3]
+            
+            # Type safety check: ensure the indices are integers
+            if isinstance(min_row, int) and isinstance(max_row, int):
+                for r in range(min_row, max_row + 1):
+                    ws.row_dimensions[r].hidden = hide
 
 @app.post("/generate-excel-pdf")
-def generate_excel_pdf(payload: Payload):
+def generate_excel_pdf(payload: Arbeitsverfahren):
     # -----------------------------
     # 0. GENERATE TIMESTAMPED NAME
     # -----------------------------
@@ -79,16 +183,31 @@ def generate_excel_pdf(payload: Payload):
     # 1. CREATE EXCEL WORKBOOK
     # -----------------------------
     wb = load_workbook(template_path)
+    ws = wb.active
+    if ws is None:
+        raise ValueError("The workbook contains no active worksheet.")
+    
+    sheet_name = ws.title
     
     # 1. Load your nested JSON data
-    with open(data_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    #with open(data_path, 'r', encoding='utf-8') as f:
+    #    data = json.load(f)
 
-        groups = ["GM", "M1", "M2", "GK"]
-        for group in groups:
-            for key, value in data[group].items():
-                if key == "Aktiv": continue
-                set_named_value(wb, f"{group}_{key}", value)
+    groups = ["GM", "M1", "M2", "GK"]
+
+    for group in groups:
+        model_instance = getattr(payload, group)
+        for key, value in model_instance.model_dump().items():
+            target: str = f"{group}_{key}"
+            if key == "Aktiv": 
+                hide_row_by_named_variable(ws, target, True)
+            else:
+                set_named_value(ws, target, value)
+
+
+    # Remove all row breaks if M1 and M2 are both inactive (there's enough space on a page for printing!)
+    if payload.M1.Aktiv == 0 and payload.M2.Aktiv == 0:
+        ws.row_breaks.brk = []
             
     #set_named_value(wb, "GM_Anschaffungspreis", 443322)
 

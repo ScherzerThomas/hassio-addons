@@ -81,8 +81,7 @@ function download(content, fileName, contentType) {
     a.click();
 }
 
-function exportAllData() {
-    console.log("data export started");
+function collectData(){
     var formGrundmaschine = document.getElementById('cp_calculatedfieldsf_pform_1');
     var formMaschine1 = document.getElementById('cp_calculatedfieldsf_pform_2');
     var formMaschine2 = document.getElementById('cp_calculatedfieldsf_pform_3');
@@ -92,6 +91,8 @@ function exportAllData() {
     var maschine1Data = exportMachineData(formMaschine1);
     var maschine2Data = exportMachineData(formMaschine2);
     var kalkulationData = exportCalculationData(formKalkulation);
+    var machineName = grundmaschineData["Name"];
+	machineName = machineName.replace(/[/\\?%*:|"<>]/g, '_');
 
     var data = {};
     data["GM"] = grundmaschineData;
@@ -99,14 +100,24 @@ function exportAllData() {
     data["M2"] = maschine2Data;
     data["GK"] = kalkulationData;
     data["version"] = currentFileVersion;
-
-    console.log(data);
+    return [data, machineName];
+}
+function exportAllData() {
+    console.log("export started");
+    var [data, machineName] = collectData();
+    console.log(machineName, data);
 
 	var now = new Date();
-	var machineName = grundmaschineData["Name"];
-	machineName = machineName.replace(/[/\\?%*:|"<>]/g, '_');
 	var fileName = `online-kalkulator.at_${machineName}_${formatDate(now)}.json`;
+    download(JSON.stringify(data, undefined, 2), fileName, "text/plain");
+}
+function exportZip() {
+    console.log("export started");
+    var [data, machineName] = collectData();
+    console.log(machineName, data);
 
+	var now = new Date();
+	var fileName = `online-kalkulator.at_${machineName}_${formatDate(now)}.json`;
     download(JSON.stringify(data, undefined, 2), fileName, "text/plain");
 }
 

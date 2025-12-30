@@ -1,0 +1,7 @@
+<div class="links">
+<a href="index.php/anleitung/" target="”_blank”" rel="noopener"><button>Anleitung</button></a>
+<button type="button" onclick="exportAllData()">Daten-Export</button>
+<button type="button" onclick="startDataImportByFile()">Daten-Import</button>
+<input id="loadFile" type="file" accept="application/JSON" style="visibility:hidden;" onchange="importDataByFile(event)">
+<pre hidden="" id="statusText"></pre>
+</div>
