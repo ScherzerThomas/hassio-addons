@@ -2,13 +2,15 @@ import subprocess
 import platform
 import tempfile
 import os
+import json
 import zipfile
 from datetime import datetime
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
+from openpyxl.workbook.defined_name import DefinedName
 
 app = FastAPI()
 
@@ -30,6 +32,35 @@ class Item(BaseModel):
 class Payload(BaseModel):
     items: List[Item]
 
+def set_named_value(workbook, name_symbol, new_value):
+    """
+    Updates the value of a symbolic name in an openpyxl workbook.
+    Handles both cell-based named ranges and named constants.
+    """
+    if name_symbol not in workbook.defined_names:
+        raise ValueError(f"Named symbol '{name_symbol}' not found in workbook.")
+
+    defn = workbook.defined_names[name_symbol]
+    dests = list(defn.destinations)
+
+    if dests:
+        # Case 1: The name refers to a cell or range (Named Cell)
+        for sheet_title, cell_address in dests:
+            ws = workbook[sheet_title]
+            # If it's a single cell reference like $A$1
+            if ":" not in cell_address:
+                ws[cell_address] = new_value
+            else:
+                # If it's a range like $A$1:$B$2, updates all cells in that range
+                for row in ws[cell_address]:
+                    for cell in row:
+                        cell.value = new_value
+    else:
+        # Case 2: The name is a constant or formula (Named Constant)
+        # Directly overwrite the definition with the new numeric value
+        workbook.defined_names[name_symbol] = DefinedName(name_symbol, attr_text=str(new_value))
+
+
 @app.post("/generate-excel-pdf")
 def generate_excel_pdf(payload: Payload):
     # -----------------------------
@@ -38,6 +69,8 @@ def generate_excel_pdf(payload: Payload):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base_name = f"REPORT_{timestamp}"
 
+    data_path = os.path.join(WORKDIR, f"data.json")
+    template_path = os.path.join(WORKDIR, f"Template.xlsx")
     excel_path = os.path.join(WORKDIR, f"{base_name}.xlsx")
     pdf_path   = os.path.join(WORKDIR, f"{base_name}.pdf")
     recalc_path = os.path.join(WORKDIR, f"{base_name}_recalc.xlsx")
@@ -45,17 +78,28 @@ def generate_excel_pdf(payload: Payload):
     # -----------------------------
     # 1. CREATE EXCEL WORKBOOK
     # -----------------------------
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Data"
+    wb = load_workbook(template_path)
+    
+    # 1. Load your nested JSON data
+    with open(data_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
 
-    ws.append(["Name", "Price", "Qty", "Total"])
+        groups = ["GM", "M1", "M2", "GK"]
+        for group in groups:
+            for key, value in data[group].items():
+                if key == "Aktiv": continue
+                set_named_value(wb, f"{group}_{key}", value)
+            
+    #set_named_value(wb, "GM_Anschaffungspreis", 443322)
 
-    for idx, item in enumerate(payload.items, start=2):
-        ws[f"A{idx}"] = item.name
-        ws[f"B{idx}"] = item.price
-        ws[f"C{idx}"] = item.qty
-        ws[f"D{idx}"] = f"=B{idx}*C{idx}"
+
+    #ws.append(["Name", "Price", "Qty", "Total"])
+#
+    #for idx, item in enumerate(payload.items, start=2):
+    #    ws[f"A{idx}"] = item.name
+    #    ws[f"B{idx}"] = item.price
+    #    ws[f"C{idx}"] = item.qty
+    #    ws[f"D{idx}"] = f"=B{idx}*C{idx}"
 
     wb.save(excel_path)
 
