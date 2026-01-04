@@ -2,7 +2,6 @@ import subprocess
 import platform
 import tempfile
 import os
-import json
 import zipfile
 import re
 from datetime import datetime
