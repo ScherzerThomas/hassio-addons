@@ -1,6 +1,6 @@
 name: "Online-Kalkulator Addon Excel"
 description: "REST-API backend for online-kalkulator - excel pdf"
-version: "1.0.0"
+version: "1.0.1"
 slug: "online-kalkulator-printaddon"
 init: false
 ports:
