@@ -1,4 +1,15 @@
- <script>
+<div class="links">
+    <!-- Main Action Button -->
+    <button type="button" onclick="createReport()">Daten exportieren</button>
+  
+    <!-- Result Buttons (Hidden by default) -->
+    <div class="resultButtons" style="display:none; margin-top: 5px;">
+        <button class="pdfBtn" style="background-color: #d32f2f; color: white;">📄 PDF Bericht</button>
+        <button class="excelBtn" style="background-color: #1f6e43; color: white;">📊 Excel Datei</button>
+        <button class="zipBtn" style="background-color: #555; color: white;">📦 ZIP Download</button>
+    </div>
+</div>
+<script>
 jQuery(function ($) {
     $(document).one(
         'showHideDepEvent',
@@ -15,6 +26,7 @@ jQuery(function ($) {
         var typ_grundmaschine_src = $('#fieldname96_1');
         var typ_maschine1_src = $('#fieldname96_2');
         var typ_maschine2_src = $('#fieldname96_3');
+        var field_leistungspreis = $('#fieldname41_4');
 
         var gk_grundmaschine = getField('fieldname8', '4');
         var gk_maschine1 = getField('fieldname9', '4');
@@ -31,18 +43,26 @@ jQuery(function ($) {
             grundmaschineAct = mk_grundmaschine.val();
             console.log("Kosten der Grundmaschine geändert auf " + grundmaschineAct);
             gk_grundmaschine.setVal(grundmaschineAct);
+            invalidateReport();
         });
 
         mk_maschine1.change(function () {
             maschine1Act = mk_maschine1.val();
             console.log("Kosten der Maschine1 geändert auf " + maschine1Act);
             gk_maschine1.setVal(maschine1Act);
+            invalidateReport();
         });
 
         mk_maschine2.change(function () {
             maschine2Act = mk_maschine2.val();
             console.log("Kosten der Maschine2 geändert auf " + maschine2Act);
             gk_maschine2.setVal(maschine2Act);
+            invalidateReport();
+        });
+        field_leistungspreis.change(function () {
+            const lp = field_leistungspreis.val();
+            console.log("Mittlerer Leistungspreis geändert auf " + lp);
+            invalidateReport();
         });
 
         typ_grundmaschine_src.change(function () {
@@ -202,14 +222,18 @@ function importDataByFile(e) {
     reader.readAsText(file);
 }
 
+function invalidateReport(){
+    const resultDivs = document.querySelectorAll('.resultButtons');
+    resultDivs.forEach(div => { div.style.display = 'none' });
+}
 
 async function createReport() {
-    const spinner = document.getElementById('spinnerOverlay');
-    const resultDiv = document.getElementById('resultButtons');
+    const spinner = document.querySelector('.spinnerOverlay'); 
+    const resultDivs = document.querySelectorAll('.resultButtons');
     
     // 1. Show Spinner
     spinner.style.display = 'block';
-    resultDiv.style.display = 'none';
+    resultDivs.forEach(div => {div.style.display = "none"})
 
     try {
         // Collect your data (your existing logic)
@@ -252,18 +276,21 @@ async function createReport() {
         const zip = await JSZip.loadAsync(blob);
 
         // 1. Setup Individual Buttons (Extract from ZIP)
-        setupIndividualDownload('pdfBtn', zip, fileName.replace(/\.zip$/i, ".pdf"), "application/pdf");
-        setupIndividualDownload('excelBtn', zip, fileName.replace(/\.zip$/i, ".xlsx"), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        setupIndividualDownload('.pdfBtn', zip, fileName.replace(/\.zip$/i, ".pdf"), "application/pdf");
+        setupIndividualDownload('.excelBtn', zip, fileName.replace(/\.zip$/i, ".xlsx"), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
         // 2. Setup "Everything as ZIP" Button (Direct use of Response Blob)
-        const zipBtn = document.getElementById('zipBtn');
-        zipBtn.onclick = () => {
-            const url = URL.createObjectURL(blob);
-            triggerDownload(url, fileName);
-        };
+        const zipBtns = document.querySelectorAll('.zipBtn');
+        zipBtns.forEach(zipBtn => 
+        {
+            zipBtn.onclick = () => {
+                const url = URL.createObjectURL(blob);
+                triggerDownload(url, fileName);
+            }
+        });
 
         // 4. Show Result UI
-        resultDiv.style.display = 'block';
+        resultDivs.forEach(div => {div.style.display = "block"})
 
     } catch (error) {
         console.error(error);
@@ -274,16 +301,18 @@ async function createReport() {
     }
 }
 
-function setupIndividualDownload(btnId, zip, fileName, mimeType) {
-    const btn = document.getElementById(btnId);
-    btn.onclick = async () => {
-        const file = zip.file(fileName);
-        if (!file) return alert("Datei nicht im ZIP gefunden.");
-        
-        const content = await file.async("blob");
-        const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
-        triggerDownload(url, fileName);
-    };
+function setupIndividualDownload(btnSelector, zip, fileName, mimeType) {
+    const btns = document.querySelectorAll(btnSelector);
+    btns.forEach(btn => {
+        btn.onclick = async () => {
+            const file = zip.file(fileName);
+            if (!file) return alert("Datei nicht im ZIP gefunden.");
+            
+            const content = await file.async("blob");
+            const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+            triggerDownload(url, fileName);
+        }
+    });
 }
 
 function triggerDownload(url, fileName) {

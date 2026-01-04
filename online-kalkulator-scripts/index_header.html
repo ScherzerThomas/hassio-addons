@@ -3,7 +3,7 @@
     <a href="index.php/anleitung/" target="_blank" rel="noopener"><button>Anleitung</button></a>
     
     <!-- Main Action Button -->
-    <button id="calcBtn" type="button" onclick="createReport()">Daten-Export</button>
+    <button id="calcBtn" type="button" onclick="createReport()">Daten exportieren</button>
     <!--
     <button type="button" onclick="exportAllData()">Daten-Export</button>
     <button type="button" onclick="startDataImportByFile()">Daten-Import</button>
@@ -12,14 +12,14 @@
     -->
     
     <!-- Result Buttons (Hidden by default) -->
-    <div id="resultButtons" style="display:none; margin-top: 5px;">
-        <button id="pdfBtn" style="background-color: #d32f2f; color: white;">📄 PDF Bericht</button>
-            <button id="excelBtn" style="background-color: #1f6e43; color: white;">📊 Excel Datei</button>
-            <button id="zipBtn" style="background-color: #555; color: white;">📦 ZIP Download</button>
+    <div class="resultButtons" style="display:none; margin-top: 5px;">
+        <button class="pdfBtn" style="background-color: #d32f2f; color: white;">📄 PDF Bericht</button>
+        <button class="excelBtn" style="background-color: #1f6e43; color: white;">📊 Excel Datei</button>
+        <button class="zipBtn" style="background-color: #555; color: white;">📦 ZIP Download</button>
     </div>
 
     <!-- Spinner Overlay -->
-    <div id="spinnerOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; text-align:center; padding-top:20%;">
+    <div class="spinnerOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; text-align:center; padding-top:20%;">
         <div class="spinner"></div>
         <p>Export läuft, bitte warten...</p>
     </div>
@@ -35,6 +35,9 @@
     height: 40px;
     animation: spin 1s linear infinite;
     display: inline-block;
+}
+.cff-form-buttons-container .pbSubmit{
+    display: none !important;
 }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
