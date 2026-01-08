@@ -9,14 +9,11 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
-from typing import List, Optional
-from openpyxl import Workbook, load_workbook
+from typing import Optional
+from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.workbook.defined_name import DefinedName
 from openpyxl.utils import range_boundaries
-from openpyxl.cell.cell import Cell
-
-
 
 origins = [
     "https://online-kalkulator.at",  # Production
@@ -179,13 +176,15 @@ def generate_excel_pdf(payload: Arbeitsverfahren,
     base_name = filename or f"REPORT_{timestamp}"
     base_name = re.sub(r'[^\w\-_]', '_', base_name)
 
-
-    #data_path = os.path.join(WORKDIR, f"data.json")
     template_path = os.path.join(APPDIR, f"Template.xlsx")
-    excel_path = os.path.join(WORKDIR, f"{base_name}.xlsx")
-    pdf_path   = os.path.join(WORKDIR, f"{base_name}.pdf")
-    #recalc_path = os.path.join(WORKDIR, f"{base_name}_recalc.xlsx")
+    report_dir = os.path.join(WORKDIR, f"REPORT_{timestamp}")
+    os.makedirs(report_dir, exist_ok=True)
+    excel_path = os.path.join(report_dir, f"{base_name}.xlsx")
+    pdf_path   = os.path.join(report_dir, f"{base_name}.pdf")
+    json_path  = os.path.join(report_dir, f"{base_name}.json")
 
+    with open(json_path, "w", encoding="utf-8") as f: 
+        f.write(payload.json(indent=4))
     # -----------------------------
     # 1. CREATE EXCEL WORKBOOK
     # -----------------------------
@@ -235,12 +234,8 @@ def generate_excel_pdf(payload: Arbeitsverfahren,
     # 2. RECALCULATE FORMULAS AND REWRITE XLSX
     # -----------------------------
 
-
-    # excel_path = path to your original file
-    excel_dir = os.path.dirname(excel_path)
-
     # Create a temp directory inside the same folder
-    with tempfile.TemporaryDirectory(dir=excel_dir) as tmpdir:
+    with tempfile.TemporaryDirectory(dir=WORKDIR) as tmpdir:
 
         # Run LibreOffice conversion inside the temp dir
         subprocess.run(
@@ -282,7 +277,7 @@ def generate_excel_pdf(payload: Arbeitsverfahren,
             "--headless",
             "--calc",
             "--convert-to", "pdf",
-            "--outdir", WORKDIR,
+            "--outdir", report_dir,
             excel_path
         ],
         check=True
@@ -295,12 +290,15 @@ def generate_excel_pdf(payload: Arbeitsverfahren,
     zip_path = os.path.join(WORKDIR, f"{base_name}.zip") 
     with open(zip_path, "wb") as file_stream: 
         with zipfile.ZipFile(file_stream, "w", zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(json_path,  arcname=f"{base_name}.json")
             zipf.write(excel_path, arcname=f"{base_name}.xlsx")
             zipf.write(pdf_path,   arcname=f"{base_name}.pdf")
 
     if platform.system() != "Windows":
+        os.remove(json_path)
         os.remove(excel_path)
         os.remove(pdf_path)
+        os.rmdir(report_dir)
 
     # Automatically handles the file opening, streaming, 
     # and Content-Disposition header
