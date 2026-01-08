@@ -184,7 +184,7 @@ def generate_excel_pdf(payload: Arbeitsverfahren,
     json_path  = os.path.join(report_dir, f"{base_name}.json")
 
     with open(json_path, "w", encoding="utf-8") as f: 
-        f.write(payload.json(indent=4))
+        f.write(payload.model_dump_json(indent=4))
     # -----------------------------
     # 1. CREATE EXCEL WORKBOOK
     # -----------------------------
