@@ -36,7 +36,7 @@ if platform.system() == "Windows":
     APPDIR = "./"
 else:
     LIBREOFFICE = "libreoffice"
-    WORKDIR = "/app/workdir"
+    WORKDIR = "/data/workdir"
     APPDIR = "/app"
 
 os.makedirs(WORKDIR, exist_ok=True)
